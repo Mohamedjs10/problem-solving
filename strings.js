@@ -164,6 +164,179 @@ function lengthOfLongestSubstring(s) {
   return maxLength;
 }
 // -------------------------------------------------------------------------
-//* [7] Find the longest substring of a string containing k distinct characters => [Sliding Window Technique: gonna be based on indices]
-//& longestSubstringWithKDistinctChars("aabbccdd", 2); => "aabb" (a/b)
+//* [7] Longest Repeating Character Replacement => [Sliding Window Technique: gonna be based on indices]
+//^ replace at most k characters with any other character => to form the longest possible same-character substring => print its length
+//& characterReplacement("ABAB", 2); => 4
+//& characterReplacement("AABABBA", 1); => 4
 // -------------------------------------------------------------------------
+function characterReplacement(s, k) {
+  const charCount = new Array(26).fill(0); // Assuming input contains only uppercase English letters // [0,0,0, ...]
+  let left = 0;
+  let maxCount = 0;
+  let maxLength = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const charIndex = s.charCodeAt(right) - "A".charCodeAt(0); // charCodeAt(x): get the Unicode of a specific character in a string
+    charCount[charIndex]++;
+
+    maxCount = Math.max(maxCount, charCount[charIndex]);
+
+    // Calculate the length of the current window
+    const windowSize = right - left + 1; // (+1) convert indices difference into length
+    // If the number of characters to replace is more than k, shrink the window
+    if (windowSize - maxCount > k) {
+      charCount[s.charCodeAt(left) - "A".charCodeAt(0)]--;
+      left++;
+    }
+
+    maxLength = Math.max(maxLength, windowSize);
+  }
+
+  return maxLength;
+}
+
+// -------------------------------------------------------------------------
+//* [8] Encode and Decode Strings (Leetcode Premium)
+// -------------------------------------------------------------------------
+
+function encode(strs) {
+  return strs.map((str) => `${str.length}/${str}`).join("");
+}
+
+function decode(s) {
+  const result = [];
+  let i = 0;
+
+  while (i < s.length) {
+    // Find the index of slash '/'
+    const slashIndex = s.indexOf("/", i);
+    // Get the length of the encoded string
+    const length = parseInt(s.substring(i, slashIndex));
+    // Move the pointer to the start of the encoded string
+    i = slashIndex + 1;
+    // Extract the encoded string
+    const encodedStr = s.substr(i, length);
+    // Move the pointer to the start of the next encoded string
+    i += length;
+
+    result.push(encodedStr);
+  }
+
+  return result;
+}
+
+// Test
+const inputStrings = ["hello", "world", "leetcode"];
+const encodedString = encode(inputStrings);
+console.log(encodedString); // Encoded string
+const decodedStrings = decode(encodedString);
+console.log(decodedStrings); // Output: ["hello", "world", "leetcode"]
+
+// -------------------------------------------------------------------------
+//* [9] Minimum Window Substring => [Sliding Window Technique: gonna be based on indices]
+//^ return the minimum window substring of s such that every character in t (including duplicates) is included in the window.
+//& minWindow("ADOBECODEBANC", "ABC"); => "BANC"
+//& minWindow("a", "a"); => "a"
+//& minWindow("a", "aa"); => ""
+// -------------------------------------------------------------------------
+function minWindow(s, t) {
+  // Create a frequency map to store the count of characters in string t
+  const targetFreq = new Map();
+  for (const char of t) {
+    targetFreq.set(char, (targetFreq.get(char) || 0) + 1);
+  }
+
+  // Initialize variables to track the sliding window and result
+  let left = 0; // Left pointer of the sliding window
+  let minLength = Infinity; // Length of the minimum window found
+  let minWindowStart = 0; // Start index of the minimum window found
+  let charCount = t.length; // Count of characters in t that need to be covered
+
+  // Iterate through the string s using the right pointer
+  for (let right = 0; right < s.length; right++) {
+    const rightChar = s[right];
+
+    // If the current character is in t, update the frequency map and charCount
+    if (targetFreq.has(rightChar)) {
+      if (targetFreq.get(rightChar) > 0) {
+        charCount--;
+      }
+      targetFreq.set(rightChar, targetFreq.get(rightChar) - 1);
+    }
+
+    // When all characters of t are covered in the current window
+    while (charCount === 0) {
+      // Update the minimum window if the current window is smaller
+      if (right - left + 1 < minLength) {
+        minLength = right - left + 1;
+        minWindowStart = left;
+      }
+
+      const leftChar = s[left];
+
+      // If the left character is in t, update the frequency map and charCount
+      if (targetFreq.has(leftChar)) {
+        targetFreq.set(leftChar, targetFreq.get(leftChar) + 1);
+        if (targetFreq.get(leftChar) > 0) {
+          charCount++;
+        }
+      }
+
+      // Shrink the window from the left
+      left++;
+    }
+  }
+
+  // If minLength is still Infinity, no valid window was found
+  if (minLength === Infinity) {
+    return "";
+  }
+
+  // Return the minimum window substring from the start index
+  return s.substr(minWindowStart, minLength);
+}
+
+// Example usage
+const s = "ADOBECODEBANC";
+const t = "ABC";
+
+const minimumWindow = minWindow(s, t);
+console.log(minimumWindow); // Output: "BANC"
+
+// -------
+function minWindow(s, t) {
+  const charCount = new Array(128).fill(0); // Assuming ASCII character set
+  for (const char of t) {
+    charCount[char.charCodeAt(0)]++;
+  }
+
+  let left = 0;
+  let right = 0;
+  let minLen = Infinity;
+  let minStart = 0;
+  let requiredChars = t.length;
+
+  while (right < s.length) {
+    if (charCount[s.charCodeAt(right)] > 0) {
+      requiredChars--;
+    }
+    charCount[s.charCodeAt(right)]--;
+
+    while (requiredChars === 0) {
+      if (right - left + 1 < minLen) {
+        minLen = right - left + 1;
+        minStart = left;
+      }
+
+      charCount[s.charCodeAt(left)]++;
+      if (charCount[s.charCodeAt(left)] > 0) {
+        requiredChars++;
+      }
+      left++;
+    }
+
+    right++;
+  }
+
+  return minLen === Infinity ? "" : s.substring(minStart, minStart + minLen);
+}
